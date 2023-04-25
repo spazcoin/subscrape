@@ -456,8 +456,8 @@ class MoonbeamScraper:
         #      the exact swap quantities
         decoded_logs = await self.decode_logs(transaction)
         if not decoded_logs or len(decoded_logs) == 0:
-            self.logger.warning(f"No logs/traces present for transaction {tx_hash}. Therefore defaulting to"
-                                f" transaction input/output values.")
+            self.logger.debug(f"No logs/traces present for transaction {tx_hash}. Therefore defaulting to"
+                              f" transaction input/output values.")
             self.transactions[account][timestamp]['input_a_quantity'] = float(amount_in)
             self.transactions[account][timestamp]['output_a_quantity'] = float(amount_out)
             return
@@ -509,12 +509,12 @@ class MoonbeamScraper:
 
         # If there wasn't an explicit event for how much was transferred, use the original requested amount.
         if exact_input_quantity_int == 0:
-            self.logger.warning(f"For transaction {tx_hash}, contract_method {contract_method_name}, there was no"
+            self.logger.info(f"For transaction {tx_hash}, contract_method {contract_method_name}, there was no"
                                 f" explicit input quantity transfer event. Therefore defaulting to requested tx amount"
                                 f" from original function params.")
             exact_input_quantity_int = amount_in
         if exact_output_quantity_int == 0:
-            self.logger.warning(f"For transaction {tx_hash}, contract_method {contract_method_name}, there was no"
+            self.logger.info(f"For transaction {tx_hash}, contract_method {contract_method_name}, there was no"
                                 f" explicit output quantity transfer event. Therefore defaulting to requested tx amount"
                                 f" from original function params.")
             exact_output_quantity_int = amount_out

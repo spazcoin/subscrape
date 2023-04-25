@@ -48,9 +48,16 @@ class BlockscoutWrapper:
                 elif response.status_code != 200:
                     self.logger.info(f"Status Code: {response.status_code}")
                     self.logger.info(response)
-                    raise Exception(f"Error: {response.status_code}")
+                    raise Exception(f"Error: {response.status_code} and {response=}")
                 else:
-                    should_request = False
+                    response_json = json.loads(response.text)
+                    if 'result' not in response_json:
+                        # Unknown/unexpected error. gather info in order to debug.
+                        self.logger.warning(f"Blockscout response did not include a 'result'. {response=}")
+                        should_request = False
+                        await asyncio.sleep(30)
+                    else:
+                        should_request = False
             finally:
                 self.lock.release()
 
@@ -136,7 +143,7 @@ class BlockscoutWrapper:
         params = {"module": "contract", "action": "getabi", "address": contract_address}
         response_dict = await self.__query(params)
         if response_dict['status'] == "0" or response_dict['message'] == "NOTOK":
-            self.logger.info(f'ABI not retrievable for {contract_address} because "{response_dict["result"]}"')
+            self.logger.debug(f'ABI not retrievable for {contract_address} because "{response_dict["result"]}"')
             return None
         else:
             # response_dict['result'] should contain a long string representation of the contract abi.

@@ -77,10 +77,15 @@ class MoonscanWrapper:
                 elif response.status_code != 200:
                     self.logger.info(f"Status Code: {response.status_code}")
                     self.logger.info(response.headers)
-                    raise Exception(f"Error: {response.status_code}")
+                    raise Exception(f"Error: {response.status_code} and {response=}")
                 else:
                     response_json = json.loads(response.text)
-                    if response_json['result'] == "Max rate limit reached, please use API Key for higher rate limit":
+                    if 'result' not in response_json:
+                        # Unknown/unexpected error. gather info in order to debug.
+                        self.logger.warning(f"Moonscan response did not include a 'result'. {response=}")
+                        should_request = False
+                        await asyncio.sleep(30)
+                    elif response_json['result'] == "Max rate limit reached, please use API Key for higher rate limit":
                         self.logger.warning("API rate limit exceeded. Waiting 30 seconds and retrying...")
                         await asyncio.sleep(30)
                     else:
@@ -213,7 +218,7 @@ class MoonscanWrapper:
         params = {"module": "contract", "action": "getabi", "address": contract_address}
         response_dict = await self.__query(params)   # will add on the optional API key
         if response_dict['status'] == "0" or response_dict['message'] == "NOTOK":
-            self.logger.info(f'ABI not retrievable for {contract_address} because "{response_dict["result"]}"'
+            self.logger.debug(f'ABI not retrievable for {contract_address} because "{response_dict["result"]}"'
                              f' at {datetime.now().strftime("%H:%M:%S.%f")[:-3]}')
             return None
         else:
